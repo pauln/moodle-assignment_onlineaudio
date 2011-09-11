@@ -104,7 +104,7 @@ class assignment_onlineaudio extends assignment_base {
             echo '<p style="margin-bottom:0;"><b>Note: </b> Only mp3, wma or wav files can be uploaded.  '."($strmaxsize)</p>";
             echo '</div>';
             echo '</form>';
-            echo '</div>';
+            echo '</div><br clear="all" />';
         }
     }
 
