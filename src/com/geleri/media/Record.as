@@ -41,8 +41,8 @@ public class Record extends Sprite{
 	public var channel:SoundChannel;
 	
 	private var _postUrl:String;
-	private var _cmid:String;
-	private var _sesskey:String;
+	private var _httpParams:Object = new Object();
+	private var _fieldName:String;
 	private var _filename:String;
 	private var _soundCompleteHandler:Function;
 	private var _progressBar:ProgressBar;
@@ -66,13 +66,9 @@ public class Record extends Sprite{
 	{
 		_postUrl = addr;
 	}
-	public function setCmid(cmid:String):void
+	public function setHttpParam(key:String, val:String):void
 	{
-		_cmid = cmid;
-	}
-	public function setSesskey(sesskey:String):void
-	{
-		_sesskey = sesskey;
+		_httpParams[key] = val;
 	}
 	public function startRecording():void
 	{
@@ -219,15 +215,15 @@ public class Record extends Sprite{
 	}
 	public function httpPost() {
 		// POST the completed MP3 back to Moodle in the existing browser window
-		var parameters:Object = new Object();
+		/*var parameters:Object = new Object();
 		parameters.sesskey = _sesskey;
 		parameters.id = _cmid;
-		parameters.save = "Upload this file";
+		parameters.save = "Upload this file";*/
 		var urlRequest:URLRequest = new URLRequest();
 		urlRequest.url = _postUrl;
 		urlRequest.contentType = 'multipart/form-data; boundary=' + UploadPostHelper.getBoundary();
 		urlRequest.method = URLRequestMethod.POST;
-		urlRequest.data = UploadPostHelper.getPostData("newfile", _filename+".mp3", mp3Data, parameters);
+		urlRequest.data = UploadPostHelper.getPostData("newfile", _filename+".mp3", mp3Data, _httpParams);
 		urlRequest.requestHeaders.push( new URLRequestHeader( 'Cache-Control', 'no-cache' ) );
 		// Load in browser window
 		navigateToURL(urlRequest, "_self");

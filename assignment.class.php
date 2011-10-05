@@ -63,7 +63,7 @@ class assignment_onlineaudio extends assignment_base {
 
         $url='type/onlineaudio/assets/recorder.swf?gateway='.$CFG->wwwroot.'/mod/assignment/type/onlineaudio/upload.php';
 
-        $flashvars='&cmid='.$this->cm->id.'&sesskey='.$USER->sesskey;
+        $flashvars='&id='.$this->cm->id.'&sesskey='.$USER->sesskey;
 
         echo '<script type="text/javascript" src="type/onlineaudio/assets/swfobject.js"></script>
             <script type="text/javascript">

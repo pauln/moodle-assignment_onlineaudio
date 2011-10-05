@@ -93,7 +93,7 @@
             postData.writeBytes(byteArray, 0, byteArray.length);
             postData = LINEBREAK(postData);
 
-            //add upload filed to postData
+            /*//add upload filed to postData
             postData = LINEBREAK(postData);
             postData = BOUNDARY(postData);
             postData = LINEBREAK(postData);
@@ -107,7 +107,7 @@
             for ( i = 0; i < bytes.length; i++ ) {
                 postData.writeByte( bytes.charCodeAt(i) );
             }
-            postData = LINEBREAK(postData);
+            postData = LINEBREAK(postData);*/
 
             //closing boundary
             postData = BOUNDARY(postData);
