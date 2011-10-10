@@ -65,6 +65,14 @@ class assignment_onlineaudio extends assignment_base {
 
         $flashvars='&id='.$this->cm->id.'&sesskey='.$USER->sesskey;
 
+        if($this->assignment->var2) {
+            $field=($this->assignment->var3)?'filename':'forcename';
+            $filename=($this->assignment->var2==2)?fullname($USER):$USER->username;
+            $filename.='_-_'.substr($this->assignment->name,0,20).'_-_'.$this->course->shortname.'_-_'.date('Y-m-d');
+            $filename=clean_filename($filename);
+            $flashvars .= "&$field=$filename";
+        }
+
         echo '<script type="text/javascript" src="type/onlineaudio/assets/swfobject.js"></script>
             <script type="text/javascript">
             swfobject.registerObject("onlineaudiorecorder", "10.1.0", "type/onlineaudio/assets/expressInstall.swf");
@@ -213,6 +221,15 @@ class assignment_onlineaudio extends assignment_base {
         $mform->addElement('select', 'var1', get_string("allowupload", "assignment_onlineaudio"), $ynoptions);
         $mform->setHelpButton('var1', array('allowupload', get_string('allowuploadhelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
         $mform->setDefault('var1', 1);
+
+        $filenameoptions = array( 0 => get_string("nodefaultname", "assignment_onlineaudio"), 1 => get_string("defaultname1", "assignment_onlineaudio"), 2 =>get_string("defaultname2", "assignment_onlineaudio"));
+        $mform->addElement('select', 'var2', get_string("defaultname", "assignment_onlineaudio"), $filenameoptions);
+        $mform->setHelpButton('var2', array('defaultname', get_string('defaultnamehelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
+        $mform->setDefault('var2', 0);
+
+        $mform->addElement('select', 'var3', get_string("allownameoverride", "assignment_onlineaudio"), $ynoptions);
+        $mform->setHelpButton('var3', array('allownameoverride', get_string('allownameoverridehelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
+        $mform->setDefault('var3', 1);
 
         $choices = get_max_upload_sizes($CFG->maxbytes, $COURSE->maxbytes);
         $choices[0] = get_string('courseuploadlimit') . ' ('.display_size($COURSE->maxbytes).')';
