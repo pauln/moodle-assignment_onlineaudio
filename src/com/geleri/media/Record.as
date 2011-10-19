@@ -42,7 +42,7 @@ public class Record extends Sprite{
 	
 	private var _postUrl:String;
 	private var _httpParams:Object = new Object();
-	private var _fieldName:String;
+	private var _fieldName:String = "newfile";
 	private var _filename:String;
 	private var _soundCompleteHandler:Function;
 	private var _progressBar:ProgressBar;
@@ -65,6 +65,10 @@ public class Record extends Sprite{
 	public function setPostUrl(addr:String):void
 	{
 		_postUrl = addr;
+	}
+	public function setFieldName(fieldName:String):void
+	{
+		_fieldName = fieldName;
 	}
 	public function setHttpParam(key:String, val:String):void
 	{
@@ -223,7 +227,7 @@ public class Record extends Sprite{
 		urlRequest.url = _postUrl;
 		urlRequest.contentType = 'multipart/form-data; boundary=' + UploadPostHelper.getBoundary();
 		urlRequest.method = URLRequestMethod.POST;
-		urlRequest.data = UploadPostHelper.getPostData("newfile", _filename+".mp3", mp3Data, _httpParams);
+		urlRequest.data = UploadPostHelper.getPostData(_fieldName, _filename+".mp3", mp3Data, _httpParams);
 		urlRequest.requestHeaders.push( new URLRequestHeader( 'Cache-Control', 'no-cache' ) );
 		// Load in browser window
 		navigateToURL(urlRequest, "_self");
