@@ -1,0 +1,40 @@
+#page-mod-assignment-view div#manualuploadform .mform .fitem .fitemtitle {
+    display:block;
+    width:100%;
+    float:none;
+    text-align:left;
+}
+#page-mod-assignment-view div#manualuploadform .mform .fitem .felement {
+    margin-left:0;
+}
+#page-mod-assignment-view div#manualuploadform .mform .fitem .felement.fsubmit {
+    text-align:left;
+}
+#page-mod-assignment-view div#manualuploadform .mform .box {
+    text-align:right;
+    border:0px none;
+}
+#page-mod-assignment-view div.box.onlineaudio .files {
+    border:1px solid #ddd;
+    padding:5px;
+}
+#page-mod-assignment-view div#onlineaudiosubmission.boxaligncenter {
+    width:575px;
+}
+#page-mod-assignment-view div#onlineaudiosubmission #onlineaudiorecordersection {
+    width:250px;
+    text-align:left;
+}
+#page-mod-assignment-view div#onlineaudiosubmission #manualuploadform {
+    width:325px;
+    text-align:left;
+}
+#page-mod-assignment-view div#onlineaudiosubmission #manualuploadform label {
+    font-size:85%;
+}
+#page-mod-assignment-view div#onlineaudiosubmission #manualuploadform form fieldset div {
+    margin:0;
+}
+#page-mod-assignment-view div#onlineaudiosubmission #manualuploadform form fieldset div.box {
+    margin-top:-20px;
+}

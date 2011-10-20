@@ -7,6 +7,8 @@
  */
 
 global $CFG;
+require_once($CFG->dirroot . '/mod/assignment/lib.php');
+require_once(dirname(__FILE__).'/simpleupload_form.php');
 
 class assignment_onlineaudio extends assignment_base {
 
@@ -21,7 +23,7 @@ class assignment_onlineaudio extends assignment_base {
 
 
     function view() {
-        global $USER;
+        global $USER, $OUTPUT;
 
         $context = get_context_instance(CONTEXT_MODULE,$this->cm->id);
         require_capability('mod/assignment:view', $context);
@@ -35,22 +37,23 @@ class assignment_onlineaudio extends assignment_base {
         $this->view_dates();
 
         $filelist='';
-        $filecount = $this->count_user_files($USER->id);
-        if ($submission = $this->get_submission()) {
+        if ($submission = $this->get_submission($USER->id)) {
             if ($submission->timemarked) {
                 $this->view_feedback();
             }
-            if ($filecount) {$filelist=$this->print_user_files($USER->id, true);
-            }
+            $filecount = $this->count_user_files($submission->id);
+            if ($filecount) {$filelist=$this->print_user_files($USER->id, true);}
+        } else {
+            $filecount = 0;
         }
         
         $upload_form='';
         if (has_capability('mod/assignment:submit', $context)  && $this->isopen() && (!$filecount || $this->assignment->resubmit || !$submission->timemarked)) {
-            $upload_form=$this->upload_form();
+            $upload_form=$this->view_upload_form();
         }
 
         if($filelist || $upload_form) {
-            print_simple_box($upload_form.$filelist, 'center');
+            echo $OUTPUT->box($upload_form.$filelist, 'center onlineaudio');
         }
         $this->view_footer();
     }
@@ -58,67 +61,140 @@ class assignment_onlineaudio extends assignment_base {
     /**
      * Shows the recording + upload form
      */
-    function upload_form() {
-        global $CFG,$USER;
+    function view_upload_form() {
+        global $CFG,$USER,$OUTPUT;
 
-        $url='type/onlineaudio/assets/recorder.swf?gateway='.$CFG->wwwroot.'/mod/assignment/type/onlineaudio/upload.php';
+        $submission = $this->get_submission($USER->id);
 
-        $flashvars='&id='.$this->cm->id.'&sesskey='.$USER->sesskey;
+        if ($this->can_upload_file($submission)) {
+            echo $OUTPUT->box_start('boxaligncenter', 'onlineaudiosubmission');
+            $url='type/onlineaudio/assets/recorder.swf?gateway='.$CFG->wwwroot.'/mod/assignment/type/onlineaudio/simpleupload.php';
 
-        if($this->assignment->var2) {
-            $field=($this->assignment->var3)?'filename':'forcename';
-            $filename=($this->assignment->var2==2)?fullname($USER):$USER->username;
-            $filename.='_-_'.substr($this->assignment->name,0,20).'_-_'.$this->course->shortname.'_-_'.date('Y-m-d');
-            $filename=clean_filename($filename);
-            $flashvars .= "&$field=$filename";
+            $flashvars='&filefield=assignment_file&id='.$this->cm->id.'&sesskey='.$USER->sesskey.'&contextid='.$this->context->id.'&userid='.$USER->id.'&_qf__mod_assignment_onlineaudioupload_form=1';
+
+            if($this->assignment->var2) {
+                $field=($this->assignment->var3)?'filename':'forcename';
+                $filename=($this->assignment->var2==2)?fullname($USER):$USER->username;
+                $filename.='_-_'.substr($this->assignment->name,0,20).'_-_'.$this->course->shortname.'_-_'.date('Y-m-d');
+                $filename=clean_filename($filename);
+                $flashvars .= "&$field=$filename";
+            }
+
+            echo '<script type="text/javascript" src="type/onlineaudio/assets/swfobject.js"></script>
+                <script type="text/javascript">
+                swfobject.registerObject("onlineaudiorecorder", "10.1.0", "type/onlineaudio/assets/expressInstall.swf");
+                </script>';
+
+            $style = ($this->assignment->var1)?' style="float:left"':'';
+            echo '<div id="onlineaudiorecordersection"'.$style.'>
+                <h3>'.get_string('makenewrecording','assignment_onlineaudio').'</h3>
+                <object id="onlineaudiorecorder" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="215" height="138">
+                        <param name="movie" value="'.$url.$flashvars.'" />
+                        <!--[if !IE]>-->
+                        <object type="application/x-shockwave-flash" data="'.$url.$flashvars.'" width="215" height="138">
+                        <!--<![endif]-->
+                        <div>
+                                <p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p>
+                        </div>
+                        <!--[if !IE]>-->
+                        </object>
+                        <!--<![endif]-->
+                </object></div>';
+
+            $struploadafile = get_string("uploadafile", "assignment_onlineaudio");
+
+            $maxbytes = $this->assignment->maxbytes == 0 ? $this->course->maxbytes : $this->assignment->maxbytes;
+            $strmaxsize = get_string('maxsize', '', display_size($maxbytes));
+
+            if($this->assignment->var1) { // allow manual upload
+                echo '<div id="manualuploadform" style="float:left;clear:right;"><h3>'.$struploadafile.'</h3>';
+                $str = get_string('advanceduploadafile', 'assignment_onlineaudio');
+                $advlink = $OUTPUT->box_start();
+                $advlink .= $OUTPUT->action_link(new moodle_url('/mod/assignment/type/onlineaudio/upload.php', array('contextid'=>$this->context->id, 'userid'=>$USER->id)), $str);
+                $advlink .= $OUTPUT->box_end();
+                $options = array('maxbytes'=>get_max_upload_file_size($CFG->maxbytes, $this->course->maxbytes, $this->assignment->maxbytes), 'accepted_types'=>'*', 'return_types'=>FILE_INTERNAL);
+                $mform = new mod_assignment_onlineaudioupload_form(new moodle_url('/mod/assignment/type/onlineaudio/simpleupload.php'), array('caption'=>get_string('uploadnote', 'assignment_onlineaudio'), 'cmid'=>$this->cm->id, 'contextid'=>$this->context->id, 'userid'=>$USER->id, 'options'=>$options, 'advancedlink'=>$advlink));
+                if ($mform->is_cancelled()) {
+                    redirect(new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id)));
+                } else if ($mform->get_data()) {
+                    $this->upload($mform);
+                    die();
+                }
+                $mform->display();
+                echo '</div><br clear="all" />';
+            }
+            $OUTPUT->box_end();
+        }
+    }
+
+    function can_upload_file($submission) {
+        global $USER;
+
+        if (is_enrolled($this->context, $USER, 'mod/assignment:submit')
+          and $this->isopen()                                                 // assignment not closed yet
+          and (empty($submission) or ($submission->userid == $USER->id))) {        // his/her own submission
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function upload($mform, $options) {
+        global $CFG, $USER, $DB, $OUTPUT;
+
+        $returnurl  = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
+        $submission = $this->get_submission($USER->id);
+
+        if (!$this->can_upload_file($submission)) {
+            $this->view_header(get_string('upload'));
+            echo $OUTPUT->notification(get_string('uploaderror', 'assignment'));
+            echo $OUTPUT->continue_button($returnurl);
+            $this->view_footer();
+            die;
         }
 
-        echo '<script type="text/javascript" src="type/onlineaudio/assets/swfobject.js"></script>
-            <script type="text/javascript">
-            swfobject.registerObject("onlineaudiorecorder", "10.1.0", "type/onlineaudio/assets/expressInstall.swf");
-            </script>';
+        if ($formdata = $mform->get_data()) {
+            $fs = get_file_storage();
+            $submission = $this->get_submission($USER->id, true); //create new submission if needed
+            $fs->delete_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id);
+            $formdata = file_postupdate_standard_filemanager($formdata, 'files', $options, $this->context, 'mod_assignment', 'submission', $submission->id);
+            $updates = new stdClass();
+            $updates->id = $submission->id;
+            $updates->timemodified = time();
+            $DB->update_record('assignment_submissions', $updates);
+            add_to_log($this->course->id, 'assignment', 'upload',
+                    'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
+            $this->update_grade($submission);
+            $this->email_teachers($submission);
 
-        $style = ($this->assignment->var1)?' style="width:250px;float:left"':'';
-        echo '<div id="onlineaudiorecordersection"'.$style.'>
-            <h3>'.get_string('makenewrecording','assignment_onlineaudio').'</h3>
-            <object id="onlineaudiorecorder" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="215" height="138">
-                    <param name="movie" value="'.$url.$flashvars.'" />
-                    <!--[if !IE]>-->
-                    <object type="application/x-shockwave-flash" data="'.$url.$flashvars.'" width="215" height="138">
-                    <!--<![endif]-->
-                    <div>
-                            <p><a href="http://www.adobe.com/go/getflashplayer"><img src="http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a></p>
-                    </div>
-                    <!--[if !IE]>-->
-                    </object>
-                    <!--<![endif]-->
-            </object></div>';
+            // send files to event system
+            $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id);
 
-        $struploadafile = get_string("uploadafile", "assignment_onlineaudio");
-
-        $maxbytes = $this->assignment->maxbytes == 0 ? $this->course->maxbytes : $this->assignment->maxbytes;
-        $strmaxsize = get_string('maxsize', '', display_size($maxbytes));
-
-        if($this->assignment->var1) { // allow manual upload
-            echo '<div id="manualuploadform" style="float:left;clear:right;"><h3>'.$struploadafile.'</h3>';
-            echo '<form enctype="multipart/form-data" method="post" '.
-                 "action=\"$CFG->wwwroot/mod/assignment/type/onlineaudio/upload.php\">";
-            echo '<div style="border:1px solid #000;padding:3px;">';
-            echo '<input type="hidden" name="id" value="'.$this->cm->id.'" />';
-            echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
-            require_once($CFG->libdir.'/uploadlib.php');
-            upload_print_form_fragment(1,array('newfile'),null,false,null,0,$this->assignment->maxbytes,false);
-            echo '<input type="submit" name="save" value="'.get_string('uploadthisfile').'" />';
-            echo '<p style="margin-bottom:0;"><b>Note: </b> Only mp3, wma or wav files can be uploaded.  '."($strmaxsize)</p>";
-            echo '</div>';
-            echo '</form>';
-            echo '</div><br clear="all" />';
+            // Let Moodle know that assessable files were  uploaded (eg for plagiarism detection)
+            $eventdata = new stdClass();
+            $eventdata->modulename   = 'assignment';
+            $eventdata->cmid         = $this->cm->id;
+            $eventdata->itemid       = $submission->id;
+            $eventdata->courseid     = $this->course->id;
+            $eventdata->userid       = $USER->id;
+            if ($files) {
+                $eventdata->files        = $files;
+            }
+            events_trigger('assessable_file_uploaded', $eventdata);
+            $returnurl  = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
+            redirect($returnurl);
         }
+
+        $this->view_header(get_string('upload'));
+        echo $OUTPUT->notification(get_string('uploaderror', 'assignment'));
+        echo $OUTPUT->continue_button($returnurl);
+        $this->view_footer();
+        die;
     }
 
      /**
      * Handle uploaded file
-     */
+     *//*
     function upload_file() {
         global $CFG, $USER;
 
@@ -203,6 +279,108 @@ class assignment_onlineaudio extends assignment_base {
         print_continue('../../view.php?id='.$this->cm->id);
 
         $this->view_footer();
+    }*/
+
+    function simple_upload_file($mform) {
+        global $CFG, $USER, $DB, $OUTPUT;
+        $viewurl = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
+        if (!is_enrolled($this->context, $USER, 'mod/assignment:submit')) {
+            redirect($viewurl);
+        }
+
+        $submission = $this->get_submission($USER->id);
+        $filecount = 0;
+        if ($submission) {
+            $filecount = $this->count_user_files($submission->id);
+        }
+        if ($this->isopen() && (!$filecount || $this->assignment->resubmit || !$submission->timemarked)) {
+            if ($submission = $this->get_submission($USER->id)) {
+                //TODO: change later to ">= 0", to prevent resubmission when graded 0
+                if (($submission->grade > 0) and !$this->assignment->resubmit) {
+                    redirect($viewurl, get_string('alreadygraded', 'assignment'));
+                }
+            }
+
+            if ($formdata = $mform->get_data()) {
+                $fs = get_file_storage();
+                $submission = $this->get_submission($USER->id, true); //create new submission if needed
+
+                if (!array_key_exists('assignment_file', $_FILES)) {
+                    redirect($viewurl, get_string('uploaderror', 'assignment'), 10);
+                    exit;
+                }
+                $filedetails = $_FILES['assignment_file'];
+
+                $filename = $filedetails['name'];
+                $filesrc = $filedetails['tmp_name'];
+
+                if (!is_uploaded_file($filesrc)) {
+                    redirect($viewurl, get_string('uploaderror', 'assignment'), 10);
+                    exit;
+                }
+                
+                $ext = substr(strrchr($filename, '.'), 1);
+                if (!preg_match('/^(mp3|wav|wma)$/i',$ext)) {
+                    redirect(get_string('filetypeerror', 'assignment_onlineaudio'), 10);
+                    exit;
+                }
+                
+                $temp_name=basename($filename,".$ext"); // We want to clean the file's base name only
+                // Run param_clean here with PARAM_FILE so that we end up with a name that other parts of Moodle
+                // (download script, deletion, etc) will handle properly.  Remove leading/trailing dots too.
+                $temp_name=trim(clean_param($temp_name, PARAM_FILE),".");
+                $filename=$temp_name.".$ext";
+                // check for filename already existing and add suffix #.
+                $n=1;
+                while($fs->file_exists($this->context->id, 'mod_assignment', 'submission', $submission->id, '/', $filename)) {
+                    $filename=$temp_name.'_'.$n++.".$ext";
+                }
+
+                // Create file
+                $fileinfo = array(
+                      'contextid' => $this->context->id,
+                      'component' => 'mod_assignment',
+                      'filearea' => 'submission',
+                      'itemid' => $submission->id,
+                      'filepath' => '/',
+                      'filename' => $filename
+                      );
+                if ($newfile = $fs->create_file_from_pathname($fileinfo, $filesrc)) {
+                    $updates = new stdClass(); //just enough data for updating the submission
+                    $updates->timemodified = time();
+                    $updates->numfiles     = $filecount+1;
+                    $updates->id     = $submission->id;
+                    $DB->update_record('assignment_submissions', $updates);
+                    add_to_log($this->course->id, 'assignment', 'upload', 'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
+                    $this->update_grade($submission);
+                    $this->email_teachers($submission);
+
+                    // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection)
+                    $eventdata = new stdClass();
+                    $eventdata->modulename   = 'assignment';
+                    $eventdata->cmid         = $this->cm->id;
+                    $eventdata->itemid       = $submission->id;
+                    $eventdata->courseid     = $this->course->id;
+                    $eventdata->userid       = $USER->id;
+                    $eventdata->file         = $newfile;
+                    events_trigger('assessable_file_uploaded', $eventdata);
+                }
+
+                redirect($viewurl, '', 0);
+            } else {
+                // Add any error messages (i.e. file too big - lang/en/moodle.php, 'uploadformlimit') to the redirect screen
+                $errorStr = get_string('uploaderror', 'assignment');
+                if(sizeof($mform->simpleupload_get_errors())) {
+                    $errorStr .= '<br />';
+                    foreach($mform->simpleupload_get_errors() as $error) {
+                        $errorStr .= '<br />'.$error;
+                    }
+                }
+                redirect($viewurl, $errorStr, 10);  //submitting not allowed!
+            }
+        }
+
+        redirect($viewurl);
     }
 
     function setup_elements(&$mform) {
@@ -211,24 +389,24 @@ class assignment_onlineaudio extends assignment_base {
         $ynoptions = array( 0 => get_string('no'), 1 => get_string('yes'));
 
         $mform->addElement('select', 'resubmit', get_string("allowresubmit", "assignment"), $ynoptions);
-        $mform->setHelpButton('resubmit', array('resubmit', get_string('allowresubmit', 'assignment'), 'assignment'));
+        $mform->addHelpButton('resubmit', 'allowresubmit', 'assignment');
         $mform->setDefault('resubmit', 0);
 
         $mform->addElement('select', 'emailteachers', get_string("emailteachers", "assignment"), $ynoptions);
-        $mform->setHelpButton('emailteachers', array('emailteachers', get_string('emailteachers', 'assignment'), 'assignment'));
+        $mform->addHelpButton('emailteachers', 'emailteachers', 'assignment');
         $mform->setDefault('emailteachers', 0);
 
         $mform->addElement('select', 'var1', get_string("allowupload", "assignment_onlineaudio"), $ynoptions);
-        $mform->setHelpButton('var1', array('allowupload', get_string('allowuploadhelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
+        $mform->addHelpButton('var1', 'allowupload', 'assignment_onlineaudio');
         $mform->setDefault('var1', 1);
 
         $filenameoptions = array( 0 => get_string("nodefaultname", "assignment_onlineaudio"), 1 => get_string("defaultname1", "assignment_onlineaudio"), 2 =>get_string("defaultname2", "assignment_onlineaudio"));
         $mform->addElement('select', 'var2', get_string("defaultname", "assignment_onlineaudio"), $filenameoptions);
-        $mform->setHelpButton('var2', array('defaultname', get_string('defaultnamehelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
+        $mform->addHelpButton('var2', 'defaultname', 'assignment_onlineaudio');
         $mform->setDefault('var2', 0);
 
         $mform->addElement('select', 'var3', get_string("allownameoverride", "assignment_onlineaudio"), $ynoptions);
-        $mform->setHelpButton('var3', array('allownameoverride', get_string('allownameoverridehelp', 'assignment_onlineaudio'), 'assignment_onlineaudio'));
+        $mform->addHelpButton('var3', 'allownameoverride', 'assignment_onlineaudio');
         $mform->setDefault('var3', 1);
 
         $choices = get_max_upload_sizes($CFG->maxbytes, $COURSE->maxbytes);
@@ -316,7 +494,7 @@ class assignment_onlineaudio extends assignment_base {
     }
 
 
-    function print_user_files($userid=0, $return=false,$mode='') {
+    /*function print_user_files($userid=0, $return=false,$mode='') {
         global $CFG, $USER;
 
         if (!$userid) {
@@ -366,6 +544,102 @@ class assignment_onlineaudio extends assignment_base {
             return $output;
         }
         echo $output;
+    }*/
+
+    /**
+     * Produces a list of links to the files uploaded by a user
+     *
+     * @param $userid int optional id of the user. If 0 then $USER->id is used.
+     * @param $return boolean optional defaults to false. If true the list is returned rather than printed
+     * @return string optional
+     */
+    function print_user_files($userid=0, $return=false) {
+        global $CFG, $USER, $OUTPUT;
+
+        $mode    = optional_param('mode', '', PARAM_ALPHA);
+        $offset  = optional_param('offset', 0, PARAM_INT);
+
+        if (!$userid) {
+            if (!isloggedin()) {
+                return '';
+            }
+            $userid = $USER->id;
+        }
+
+        $output = '';
+
+        $submission = $this->get_submission($userid);
+        if (!$submission) {
+            return $output;
+        }
+
+        // only during grading
+        /*if ($this->drafts_tracked() and $this->isopen() and !$this->is_finalized($submission) and !empty($mode)) {
+            $output .= '<strong>'.get_string('draft', 'assignment').':</strong><br />';
+        }
+
+        if ($this->notes_allowed() and !empty($submission->data1) and !empty($mode)) { // only during grading
+
+            $npurl = $CFG->wwwroot."/mod/assignment/type/upload/notes.php?id={$this->cm->id}&amp;userid=$userid&amp;offset=$offset&amp;mode=single";
+            $output .= '<a href="'.$npurl.'">'.get_string('notes', 'assignment').'</a><br />';
+
+        }
+
+        if ($this->drafts_tracked() and $this->isopen() and has_capability('mod/assignment:grade', $this->context) and $mode != '') { // we do not want it on view.php page
+            if ($this->can_unfinalize($submission)) {
+                //$options = array ('id'=>$this->cm->id, 'userid'=>$userid, 'action'=>'unfinalize', 'mode'=>$mode, 'offset'=>$offset);
+                $output .= '<br /><input type="submit" name="unfinalize" value="'.get_string('unfinalize', 'assignment').'" />';
+                $output .=  $OUTPUT->help_icon('unfinalize', 'assignment');
+
+            } else if ($this->can_finalize($submission)) {
+                //$options = array ('id'=>$this->cm->id, 'userid'=>$userid, 'action'=>'finalizeclose', 'mode'=>$mode, 'offset'=>$offset);
+                $output .= '<br /><input type="submit" name="finalize" value="'.get_string('finalize', 'assignment').'" />';
+            }
+        }*/
+
+        $strdelete = get_string('delete');
+        $candelete = $this->can_delete_files($submission);
+
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($this->context->id, 'mod_assignment', 'submission', $submission->id, "timemodified", false);
+        if (!empty($files)) {
+            require_once($CFG->dirroot . '/mod/assignment/locallib.php');
+            if ($CFG->enableportfolios) {
+                require_once($CFG->libdir.'/portfoliolib.php');
+                $button = new portfolio_add_button();
+            }
+            foreach ($files as $file) {
+                $filename = $file->get_filename();
+                $filepath = $file->get_filepath();
+                $mimetype = $file->get_mimetype();
+                $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_assignment/submission/'.$submission->id.'/'.$filename);
+                $output .= '<a href="'.$path.'" ><img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />'.s($filename).'</a>';
+                if ($candelete) {
+                    $delurl  = "$CFG->wwwroot/mod/assignment/delete.php?id={$this->cm->id}&amp;path=$filepath&amp;file=$filename&amp;userid={$submission->userid}&amp;mode=$mode&amp;offset=$offset";
+
+                    $output .= '<a href="'.$delurl.'">&nbsp;'
+                              .'<img title="'.$strdelete.'" src="'.$OUTPUT->pix_url('/t/delete').'" class="iconsmall" alt="" /></a> ';
+                }
+                if ($CFG->enableportfolios && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
+                    $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'submissionid' => $submission->id, 'fileid' => $file->get_id()), '/mod/assignment/locallib.php');
+                    $button->set_format_by_file($file);
+                    $output .= $button->to_html(PORTFOLIO_ADD_ICON_LINK);
+                }
+                $output .= plagiarism_get_links(array('userid'=>$userid, 'file'=>$file, 'cmid'=>$this->cm->id, 'course'=>$this->course, 'assignment'=>$this->assignment));
+                $output .= '<br />';
+            }
+            if ($CFG->enableportfolios && count($files) > 1  && $this->portfolio_exportable() && has_capability('mod/assignment:exportownsubmission', $this->context)) {
+                $button->set_callback_options('assignment_portfolio_caller', array('id' => $this->cm->id, 'submissionid' => $submission->id), '/mod/assignment/locallib.php');
+                $output .= '<br />'  . $button->to_html(PORTFOLIO_ADD_TEXT_LINK);
+            }
+        }
+
+        $output = '<div class="files">'.$output.'</div>';
+
+        if ($return) {
+            return $output;
+        }
+        echo $output;
     }
     
     
@@ -388,82 +662,69 @@ class assignment_onlineaudio extends assignment_base {
     
     
     function delete() {
-        global $CFG;
+        global $CFG, $DB, $OUTPUT, $PAGE;
 
         $file     = required_param('file', PARAM_FILE);
         $userid   = required_param('userid', PARAM_INT);
         $confirm  = optional_param('confirm', 0, PARAM_BOOL);
         $mode     = optional_param('mode', '', PARAM_ALPHA);
+        $offset   = optional_param('offset', 0, PARAM_INT);
+        $path     = optional_param('path', '/', PARAM_PATH);
 
         require_login($this->course->id, false, $this->cm);
 
         if (empty($mode)) {
             $urlreturn = 'view.php';
             $optionsreturn = array('id'=>$this->cm->id);
-            $returnurl = 'view.php?id='.$this->cm->id;
+            $returnurl  = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
         } else {
             $urlreturn = 'submissions.php';
-            $optionsreturn = array('id'=>$this->cm->id, 'mode'=>$mode, 'userid'=>$userid);
-            $returnurl = "submissions.php?id={$this->cm->id}&amp;mode=$mode&amp;userid=$userid";
+            $optionsreturn = array('id'=>$this->cm->id, 'offset'=>$offset, 'mode'=>$mode, 'userid'=>$userid);
+            $returnurl  = new moodle_url('/mod/assignment/submissions.php', array('id'=>$this->cm->id, 'offset'=>$offset, 'userid'=>$userid));
         }
 
         if (!$submission = $this->get_submission($userid) // incorrect submission
           or !$this->can_delete_files($submission)) {     // can not delete
             $this->view_header(get_string('delete'));
-            notify(get_string('cannotdeletefiles', 'assignment'));
-            print_continue($returnurl);
+            echo $OUTPUT->notification(get_string('cannotdeletefiles', 'assignment'));
+            echo $OUTPUT->continue_button($returnurl);
             $this->view_footer();
             die;
         }
-        $dir = $this->file_area_name($userid);
 
-        if (!data_submitted('nomatch') or !$confirm or !confirm_sesskey()) {
-            $optionsyes = array ('id'=>$this->cm->id, 'file'=>$file, 'userid'=>$userid, 'confirm'=>1, 'sesskey'=>sesskey(), 'mode'=>$mode,  'sesskey'=>sesskey());
+        if (!data_submitted() or !$confirm or !confirm_sesskey()) {
+            $optionsyes = array ('id'=>$this->cm->id, 'file'=>$file, 'path'=>$path, 'userid'=>$userid, 'confirm'=>1, 'sesskey'=>sesskey(), 'mode'=>$mode, 'offset'=>$offset, 'sesskey'=>sesskey());
             if (empty($mode)) {
                 $this->view_header(get_string('delete'));
             } else {
-                print_header(get_string('delete'));
+                $PAGE->set_title(get_string('delete'));
+                echo $OUTPUT->header();
             }
-            print_heading(get_string('delete'));
-            notice_yesno(get_string('confirmdeletefile', 'assignment', $file), 'delete.php', $urlreturn, $optionsyes, $optionsreturn, 'post', 'get');
+            echo $OUTPUT->heading(get_string('delete'));
+            if($path=='/') {
+                $filepath = $file;
+            } else {
+                $filepath = $path.$file;
+            }
+            echo $OUTPUT->confirm(get_string('confirmdeletefile', 'assignment', $filepath), new moodle_url('delete.php', $optionsyes), new moodle_url($urlreturn, $optionsreturn));
             if (empty($mode)) {
                 $this->view_footer();
             } else {
-                print_footer('none');
+                echo $OUTPUT->footer();
             }
             die;
         }
 
-        $filepath = $CFG->dataroot.'/'.$dir.'/'.$file;
-        if (file_exists($filepath)) {
-            if (@unlink($filepath)) {
-                $updated = new object();
-                $updated->id = $submission->id;
-                $updated->timemodified = time();
-                if (update_record('assignment_submissions', $updated)) {
-                    add_to_log($this->course->id, 'assignment', 'upload', //TODO: add delete action to log
-                            'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
-                    $submission = $this->get_submission($userid);
-                    $this->update_grade($submission);
-                }
-                redirect($returnurl);
-            }
+        $fs = get_file_storage();
+        if ($file = $fs->get_file($this->context->id, 'mod_assignment', 'submission', $submission->id, $path, $file)) {
+            $file->delete();
+            $submission->timemodified = time();
+            $DB->update_record('assignment_submissions', $submission);
+            add_to_log($this->course->id, 'assignment', 'upload', //TODO: add delete action to log
+                    'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
+            $this->update_grade($submission);
         }
-
-        // print delete error
-        if (empty($mode)) {
-            $this->view_header(get_string('delete'));
-        } else {
-            print_header(get_string('delete'));
-        }
-        notify(get_string('deletefilefailed', 'assignment'));
-        print_continue($returnurl);
-        if (empty($mode)) {
-            $this->view_footer();
-        } else {
-            print_footer('none');
-        }
-        die;
+        redirect($returnurl);
     }
 }
 ?>
