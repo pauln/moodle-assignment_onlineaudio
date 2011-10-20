@@ -192,95 +192,6 @@ class assignment_onlineaudio extends assignment_base {
         die;
     }
 
-     /**
-     * Handle uploaded file
-     *//*
-    function upload_file() {
-        global $CFG, $USER;
-
-        require_capability('mod/assignment:submit', get_context_instance(CONTEXT_MODULE, $this->cm->id));
-
-        $this->view_header(get_string('upload'));
-
-        $filecount = $this->count_user_files($USER->id);
-        $submission = $this->get_submission($USER->id);
-        if ($this->isopen() && (!$filecount || $this->assignment->resubmit || !$submission->timemarked)) {
-            if ($submission = $this->get_submission($USER->id)) {
-                //TODO: change later to ">= 0", to prevent resubmission when graded 0
-                if (($submission->grade > 0) and !$this->assignment->resubmit) {
-                    notify(get_string('alreadygraded', 'assignment'));
-                }
-            }
-
-            $dir = $this->file_area_name($USER->id);
-
-            require_once($CFG->dirroot.'/lib/uploadlib.php');
-            //$um = new upload_manager('newfile',false,true,$this->course,false,$this->assignment->maxbytes);
-
-            $ext = substr(strrchr($_FILES["newfile"]["name"], '.'), 1);
-
-            if (!preg_match('/^(mp3|wav|wma)$/i',$ext)) {
-                notify(get_string('filetypeerror', 'assignment_onlineaudio'));
-                print_continue('../../view.php?id=' . $this->cm->id);
-                $this->view_footer();
-
-                return;
-            }
-
-            $destination_path=$this->file_area($USER->id)."/";
-            $temp_name=basename($_FILES["newfile"]["name"],".$ext"); // We want to clean the file's base name only
-
-            // Run param_clean here with PARAM_FILE so that we end up with a name that other parts of Moodle
-            // (download script, deletion, etc) will handle properly.  Remove leading/trailing dots too.
-            $temp_name=trim(clean_param($temp_name, PARAM_FILE),".");
-            $newfile_name=$temp_name.".$ext";
-            // check for filename already existing and add suffix #.
-            $n=1;
-            while(file_exists($destination_path.$newfile_name)) {$newfile_name=$temp_name.'_'.$n++.".$ext";}
-
-            //if ($um->process_file_uploads($dir) and confirm_sesskey()) {
-            if (move_uploaded_file($_FILES["newfile"]['tmp_name'], $destination_path.'/'.$newfile_name)) {
-                if ($submission) {
-                    $submission->timemodified = time();
-                    $submission->numfiles++;
-                    $submission->submissioncomment = addslashes($submission->submissioncomment);
-                    unset($submission->data1);  // Don't need to update this.
-                    unset($submission->data2);  // Don't need to update this.
-                    if (update_record("assignment_submissions", $submission)) {
-                        add_to_log($this->course->id, 'assignment', 'upload',
-                                'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
-                        $submission = $this->get_submission($USER->id);
-                        $this->update_grade($submission);
-                        $this->email_teachers($submission);
-                        print_heading(get_string('uploadedfile'));
-                    } else {
-                        notify(get_string("uploadfailnoupdate", "assignment"));
-                    }
-                } else {
-                    $newsubmission = $this->prepare_new_submission($USER->id);
-                    $newsubmission->timemodified = time();
-                    $newsubmission->numfiles = 1;
-                    if (insert_record('assignment_submissions', $newsubmission)) {
-                        add_to_log($this->course->id, 'assignment', 'upload',
-                                'view.php?a='.$this->assignment->id, $this->assignment->id, $this->cm->id);
-                        $submission = $this->get_submission($USER->id);
-                        $this->update_grade($submission);
-                        $this->email_teachers($newsubmission);
-                        print_heading(get_string('uploadedfile'));
-                    } else {
-                        notify(get_string("uploadnotregistered", "assignment", $newfile_name) );
-                    }
-                }
-            }
-        } else {
-            notify(get_string("uploaderror", "assignment")); //submitting not allowed!
-        }
-
-        print_continue('../../view.php?id='.$this->cm->id);
-
-        $this->view_footer();
-    }*/
-
     function simple_upload_file($mform) {
         global $CFG, $USER, $DB, $OUTPUT;
         $viewurl = new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id));
@@ -494,58 +405,6 @@ class assignment_onlineaudio extends assignment_base {
     }
 
 
-    /*function print_user_files($userid=0, $return=false,$mode='') {
-        global $CFG, $USER;
-
-        if (!$userid) {
-            if (!isloggedin()) {
-                return '';
-            }
-            $userid = $USER->id;
-        }
-    
-        $filearea = $this->file_area_name($userid);
-
-        $output = '';
-
-        $submission = $this->get_submission($userid);
-
-        $candelete = $this->can_delete_files($submission);
-        $strdelete   = get_string('delete');
-
-        if ($basedir = $this->file_area($userid)) {
-            if ($files = get_directory_list($basedir)) {
-                require_once($CFG->libdir . '/filelib.php');
-
-                foreach ($files as $key => $file) {
-                    $icon = mimeinfo('icon', $file);
-                    $ffurl = get_file_url("$filearea/$file");
-
-                    //died right here
-                    //require_once($ffurl);
-                    $output .= '<img src="'.$CFG->pixpath.'/f/'.$icon.'" class="icon" alt="'.$icon.'" />'.
-                            '<a href="'.$ffurl.'" >'.$file.'</a>';
-
-                    if ($candelete) {
-                        $delurl = "$CFG->wwwroot/mod/assignment/delete.php?id={$this->cm->id}&amp;file=$file&amp;userid={$submission->userid}" . ($mode ? '&mode=submissions' : '');
-
-                        $output .= '<a href="' . $delurl . '">&nbsp;'
-                                . '<img title="' . $strdelete . '" src="' . $CFG->pixpath . '/t/delete.gif" class="iconsmall" alt="" /></a> ';
-                    }
-                    $output .='<br/>';
-
-                }
-            }
-        }
-
-        $output = '<div class="recorder_files">'.$output.'</div>';
-
-        if ($return) {
-            return $output;
-        }
-        echo $output;
-    }*/
-
     /**
      * Produces a list of links to the files uploaded by a user
      *
@@ -572,30 +431,6 @@ class assignment_onlineaudio extends assignment_base {
         if (!$submission) {
             return $output;
         }
-
-        // only during grading
-        /*if ($this->drafts_tracked() and $this->isopen() and !$this->is_finalized($submission) and !empty($mode)) {
-            $output .= '<strong>'.get_string('draft', 'assignment').':</strong><br />';
-        }
-
-        if ($this->notes_allowed() and !empty($submission->data1) and !empty($mode)) { // only during grading
-
-            $npurl = $CFG->wwwroot."/mod/assignment/type/upload/notes.php?id={$this->cm->id}&amp;userid=$userid&amp;offset=$offset&amp;mode=single";
-            $output .= '<a href="'.$npurl.'">'.get_string('notes', 'assignment').'</a><br />';
-
-        }
-
-        if ($this->drafts_tracked() and $this->isopen() and has_capability('mod/assignment:grade', $this->context) and $mode != '') { // we do not want it on view.php page
-            if ($this->can_unfinalize($submission)) {
-                //$options = array ('id'=>$this->cm->id, 'userid'=>$userid, 'action'=>'unfinalize', 'mode'=>$mode, 'offset'=>$offset);
-                $output .= '<br /><input type="submit" name="unfinalize" value="'.get_string('unfinalize', 'assignment').'" />';
-                $output .=  $OUTPUT->help_icon('unfinalize', 'assignment');
-
-            } else if ($this->can_finalize($submission)) {
-                //$options = array ('id'=>$this->cm->id, 'userid'=>$userid, 'action'=>'finalizeclose', 'mode'=>$mode, 'offset'=>$offset);
-                $output .= '<br /><input type="submit" name="finalize" value="'.get_string('finalize', 'assignment').'" />';
-            }
-        }*/
 
         $strdelete = get_string('delete');
         $candelete = $this->can_delete_files($submission);
