@@ -232,7 +232,7 @@ class assignment_onlineaudio extends assignment_base {
                 
                 $ext = substr(strrchr($filename, '.'), 1);
                 if (!preg_match('/^(mp3|wav|wma)$/i',$ext)) {
-                    redirect(get_string('filetypeerror', 'assignment_onlineaudio'), 10);
+                    redirect($viewurl, get_string('filetypeerror', 'assignment_onlineaudio'), 10);
                     exit;
                 }
                 
