@@ -112,7 +112,7 @@ class assignment_onlineaudio extends assignment_base {
                 $advlink = $OUTPUT->box_start();
                 $advlink .= $OUTPUT->action_link(new moodle_url('/mod/assignment/type/onlineaudio/upload.php', array('contextid'=>$this->context->id, 'userid'=>$USER->id)), $str);
                 $advlink .= $OUTPUT->box_end();
-                $options = array('maxbytes'=>get_max_upload_file_size($CFG->maxbytes, $this->course->maxbytes, $this->assignment->maxbytes), 'accepted_types'=>'*', 'return_types'=>FILE_INTERNAL);
+                $options = array('maxbytes'=>get_max_upload_file_size($CFG->maxbytes, $this->course->maxbytes, $this->assignment->maxbytes), 'accepted_types'=>'*');
                 $mform = new mod_assignment_onlineaudioupload_form(new moodle_url('/mod/assignment/type/onlineaudio/simpleupload.php'), array('caption'=>get_string('uploadnote', 'assignment_onlineaudio'), 'cmid'=>$this->cm->id, 'contextid'=>$this->context->id, 'userid'=>$USER->id, 'options'=>$options, 'advancedlink'=>$advlink));
                 if ($mform->is_cancelled()) {
                     redirect(new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id)));
