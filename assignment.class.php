@@ -561,5 +561,55 @@ class assignment_onlineaudio extends assignment_base {
         }
         redirect($returnurl);
     }
+
+    function send_file($filearea, $args) {
+        global $CFG, $DB, $USER;
+        require_once($CFG->libdir.'/filelib.php');
+
+        require_login($this->course, false, $this->cm);
+
+        if ($filearea === 'submission') {
+            $submissionid = (int)array_shift($args);
+
+            if (!$submission = $DB->get_record('assignment_submissions', array('assignment'=>$this->assignment->id, 'id'=>$submissionid))) {
+                return false;
+            }
+
+            if ($USER->id != $submission->userid and !has_capability('mod/assignment:grade', $this->context)) {
+                return false;
+            }
+
+            $relativepath = implode('/', $args);
+            $fullpath = "/{$this->context->id}/mod_assignment/submission/$submission->id/$relativepath";
+
+            $fs = get_file_storage();
+            if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
+                return false;
+            }
+            send_stored_file($file, 0, 0, true); // download MUST be forced - security!
+
+        } else if ($filearea === 'response') {
+            $submissionid = (int)array_shift($args);
+
+            if (!$submission = $DB->get_record('assignment_submissions', array('assignment'=>$this->assignment->id, 'id'=>$submissionid))) {
+                return false;
+            }
+
+            if ($USER->id != $submission->userid and !has_capability('mod/assignment:grade', $this->context)) {
+                return false;
+            }
+
+            $relativepath = implode('/', $args);
+            $fullpath = "/{$this->context->id}/mod_assignment/response/$submission->id/$relativepath";
+
+            $fs = get_file_storage();
+            if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
+                return false;
+            }
+            send_stored_file($file, 0, 0, true);
+        }
+
+        return false;
+    }
 }
 ?>
