@@ -78,8 +78,10 @@ class assignment_onlineaudio extends assignment_base {
             swfobject.registerObject("onlineaudiorecorder", "10.1.0", "type/onlineaudio/assets/expressInstall.swf");
             </script>';
 
-        $style = ($this->assignment->var1)?' style="width:250px;float:left"':'';
-        echo '<div id="onlineaudiorecordersection"'.$style.'>
+        $style = ($this->assignment->var1)?'width:250px;float:left':'width:215px;';
+        $width = ($this->assignment->var1)?'755':'220';
+        echo '<div style="width:'.$width.'px;margin:0 auto;">';
+        echo '<div id="onlineaudiorecordersection" style="'.$style.'">
             <h3>'.get_string('makenewrecording','assignment_onlineaudio').'</h3>
             <object id="onlineaudiorecorder" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="215" height="138">
                     <param name="movie" value="'.$url.$flashvars.'" />
@@ -100,7 +102,7 @@ class assignment_onlineaudio extends assignment_base {
         $strmaxsize = get_string('maxsize', '', display_size($maxbytes));
 
         if($this->assignment->var1) { // allow manual upload
-            echo '<div id="manualuploadform" style="float:left;clear:right;"><h3>'.$struploadafile.'</h3>';
+            echo '<div id="manualuploadform" style="width:500px;float:left;clear:right;"><h3>'.$struploadafile.'</h3>';
             echo '<form enctype="multipart/form-data" method="post" '.
                  "action=\"$CFG->wwwroot/mod/assignment/type/onlineaudio/upload.php\">";
             echo '<div style="border:1px solid #000;padding:3px;">';
@@ -114,6 +116,7 @@ class assignment_onlineaudio extends assignment_base {
             echo '</form>';
             echo '</div><br clear="all" />';
         }
+        echo '</div>';
     }
 
      /**
