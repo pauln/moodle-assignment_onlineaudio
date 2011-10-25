@@ -5,7 +5,7 @@
 //  This fragment is called by /admin/index.php
 ////////////////////////////////////////////////////////////////////////////////
 
-$plugin->version   = 2011090802;
+$plugin->version   = 2011090803;
 $plugin->requires  = 2007101590;
 
 
