@@ -1,5 +1,6 @@
 <?php
 
+$string['pluginname'] = 'Online Audio Recording';
 $string['typeonlineaudio'] = 'Online Audio Recording';
 $string['onlineaudiodownload'] = 'You can <a href=\'$a\'>download</a> the file and play it with any player that can play mp3 files.';
 $string['onlineaudioplaying'] = 'Playing $a';
