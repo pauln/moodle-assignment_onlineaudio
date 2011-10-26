@@ -7,6 +7,7 @@
  */
 
 global $CFG;
+require_once($CFG->libdir.'/weblib.php');
 require_once($CFG->dirroot . '/mod/assignment/lib.php');
 require_once(dirname(__FILE__).'/simpleupload_form.php');
 
@@ -448,7 +449,12 @@ class assignment_onlineaudio extends assignment_base {
                 $filepath = $file->get_filepath();
                 $mimetype = $file->get_mimetype();
                 $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_assignment/submission/'.$submission->id.'/'.$filename);
-                $output .= '<a href="'.$path.'" ><img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />'.s($filename).'</a>';
+                $output .= '<img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />';
+                // Dummy link for media filters
+                $filtered = format_text('<a href="'.$path.'" style="display:none;"> </a> ', FORMAT_HTML);
+                $filtered = preg_replace('~<a.+?</a>~','',$filtered);
+                // Add a real link after the dummy one, so that we get a proper download link no matter what
+                $output .= $filtered . '<a href="'.$path.'" >'.s($filename).'</a>';
                 if ($candelete) {
                     $delurl  = "$CFG->wwwroot/mod/assignment/delete.php?id={$this->cm->id}&amp;path=$filepath&amp;file=$filename&amp;userid={$submission->userid}&amp;mode=$mode&amp;offset=$offset";
 
