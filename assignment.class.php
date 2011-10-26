@@ -7,6 +7,7 @@
  */
 
 global $CFG;
+require_once($CFG->libdir.'/weblib.php');
 
 class assignment_onlineaudio extends assignment_base {
 
@@ -348,9 +349,12 @@ class assignment_onlineaudio extends assignment_base {
 
                     //died right here
                     //require_once($ffurl);
-                    $output .= '<img src="'.$CFG->pixpath.'/f/'.$icon.'" class="icon" alt="'.$icon.'" />'.
-                            '<a href="'.$ffurl.'" >'.$file.'</a>';
-
+                    $output .= '<img src="'.$CFG->pixpath.'/f/'.$icon.'" class="icon" alt="'.$icon.'" />';
+                    // Dummy link for media filters
+                    $filtered = format_text('<a href="'.$ffurl.'" style="display:none;"> </a> ', FORMAT_HTML);
+                    $filtered = preg_replace('~<a.+?</a>~','',$filtered);
+                    // Add a real link after the dummy one, so that we get a proper download link no matter what
+                    $output .= $filtered . '<a href="'.$ffurl.'" >'.$file.'</a>';
                     if ($candelete) {
                         $delurl = "$CFG->wwwroot/mod/assignment/delete.php?id={$this->cm->id}&amp;file=$file&amp;userid={$submission->userid}" . ($mode ? '&mode=submissions' : '');
 
