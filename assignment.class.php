@@ -123,7 +123,7 @@ class assignment_onlineaudio extends assignment_base {
                 $mform->display();
                 echo '</div><br clear="all" />';
             }
-            $OUTPUT->box_end();
+            echo $OUTPUT->box_end();
         }
     }
 
