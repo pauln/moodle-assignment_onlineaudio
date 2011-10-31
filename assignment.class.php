@@ -104,7 +104,7 @@ class assignment_onlineaudio extends assignment_base {
 
             $struploadafile = get_string("uploadafile", "assignment_onlineaudio");
 
-            $maxbytes = $this->assignment->maxbytes == 0 ? $this->course->maxbytes : $this->assignment->maxbytes;
+            $maxbytes = get_max_upload_file_size($CFG->maxbytes, $this->course->maxbytes, $this->assignment->maxbytes);
             $strmaxsize = get_string('maxsize', '', display_size($maxbytes));
 
             if($this->assignment->var1) { // allow manual upload
@@ -113,8 +113,9 @@ class assignment_onlineaudio extends assignment_base {
                 $advlink = $OUTPUT->box_start();
                 $advlink .= $OUTPUT->action_link(new moodle_url('/mod/assignment/type/onlineaudio/upload.php', array('contextid'=>$this->context->id, 'userid'=>$USER->id)), $str);
                 $advlink .= $OUTPUT->box_end();
-                $options = array('maxbytes'=>get_max_upload_file_size($CFG->maxbytes, $this->course->maxbytes, $this->assignment->maxbytes), 'accepted_types'=>'*');
+                $options = array('maxbytes'=>$maxbytes, 'accepted_types'=>'*');
                 $mform = new mod_assignment_onlineaudioupload_form(new moodle_url('/mod/assignment/type/onlineaudio/simpleupload.php'), array('caption'=>get_string('uploadnote', 'assignment_onlineaudio'), 'cmid'=>$this->cm->id, 'contextid'=>$this->context->id, 'userid'=>$USER->id, 'options'=>$options, 'advancedlink'=>$advlink));
+                $mform->simpleupload_setMaxFileSize($maxbytes);
                 if ($mform->is_cancelled()) {
                     redirect(new moodle_url('/mod/assignment/view.php', array('id'=>$this->cm->id)));
                 } else if ($mform->get_data()) {
@@ -451,7 +452,7 @@ class assignment_onlineaudio extends assignment_base {
                 $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$this->context->id.'/mod_assignment/submission/'.$submission->id.'/'.$filename);
                 $output .= '<img src="'.$OUTPUT->pix_url(file_mimetype_icon($mimetype)).'" class="icon" alt="'.$mimetype.'" />';
                 // Dummy link for media filters
-                $filtered = format_text('<a href="'.$path.'" style="display:none;"> </a> ', FORMAT_HTML);
+                $filtered = filter_text('<a href="'.$path.'" style="display:none;"> </a> ', $this->course->id);
                 $filtered = preg_replace('~<a.+?</a>~','',$filtered);
                 // Add a real link after the dummy one, so that we get a proper download link no matter what
                 $output .= $filtered . '<a href="'.$path.'" >'.s($filename).'</a>';

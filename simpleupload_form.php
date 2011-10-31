@@ -26,9 +26,13 @@ class mod_assignment_onlineaudioupload_form extends moodleform {
     function simpleupload_get_errors() {
         return $this->_form->_errors;
     }
+    function simpleupload_setMaxFileSize($newval) {
+        return $this->_form->setMaxFileSize($newval);
+    }
     function definition() {
         $mform = $this->_form;
         $instance = $this->_customdata;
+        $this->simpleupload_setMaxFileSize($instance['options']['maxbytes']);
 
         // visible elements
         //$mform->addElement('filemanager', 'newfile', get_string('uploadafile'));
