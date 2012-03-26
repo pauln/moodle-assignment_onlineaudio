@@ -4,6 +4,7 @@ $string['typeonlineaudio'] = 'Enregistrement Audio en Ligne';
 $string['onlineaudiodownload'] = 'Vous pouvez <a href=\'$a\'>télécharger</a> le fichier et le lire avec n\'importe quel lecteur prenant en charge le format mp3.';
 $string['onlineaudioplaying'] = 'Lecture $a';
 $string['uploadafile'] = 'Charger un enregistrement existant :';
+$string['uploadnote'] = '<strong>Note :</strong> Seuls les fichiers au format mp3, wma ou wav peuvent être téléchargés<br />';
 $string['allowupload'] = 'Autoriser le téléchargement manuel';
 $string['allowuploadhelp'] = 'Autoriser les étudiants à télécharger leurs propres fichiers (formats pris en charge) en plus de l\'utilisation de l\'enregistreur.';
 $string['makenewrecording'] = 'Enregistrer un nouveau fichier audio :';

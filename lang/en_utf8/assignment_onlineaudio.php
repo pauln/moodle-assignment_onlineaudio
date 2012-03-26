@@ -4,6 +4,7 @@ $string['typeonlineaudio'] = 'Online Audio Recording';
 $string['onlineaudiodownload'] = 'You can <a href=\'$a\'>download</a> the file and play it with any player that can play wav files.';
 $string['onlineaudioplaying'] = 'Playing $a';
 $string['uploadafile'] = 'Upload an existing recording:';
+$string['uploadnote'] = '<b>Note: </b> Only mp3, wma or wav files can be uploaded.';
 $string['allowupload'] = 'Allow manual upload';
 $string['allowuploadhelp'] = 'Allow students to upload their own files (in supported formats) in addition to using the recorder.';
 $string['makenewrecording'] = 'Record a new submission:';

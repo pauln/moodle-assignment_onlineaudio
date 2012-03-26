@@ -112,7 +112,7 @@ class assignment_onlineaudio extends assignment_base {
             require_once($CFG->libdir.'/uploadlib.php');
             upload_print_form_fragment(1,array('newfile'),null,false,null,0,$this->assignment->maxbytes,false);
             echo '<input type="submit" name="save" value="'.get_string('uploadthisfile').'" />';
-            echo '<p style="margin-bottom:0;"><b>Note: </b> Only mp3, wma or wav files can be uploaded.  '."($strmaxsize)</p>";
+            echo '<p style="margin-bottom:0;">'.get_string('uploadnote', 'assignment_onlineaudio').'  '."($strmaxsize)</p>";
             echo '</div>';
             echo '</form>';
             echo '</div><br clear="all" />';
