@@ -569,7 +569,7 @@ class assignment_onlineaudio extends assignment_base {
         redirect($returnurl);
     }
 
-    function send_file($filearea, $args) {
+    function send_file($filearea, $args, $forcedownload, array $options=array()) {
         global $CFG, $DB, $USER;
         require_once($CFG->libdir.'/filelib.php');
 
@@ -593,7 +593,7 @@ class assignment_onlineaudio extends assignment_base {
             if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
                 return false;
             }
-            send_stored_file($file, 0, 0, true); // download MUST be forced - security!
+            send_stored_file($file, 0, 0, true, $options); // download MUST be forced - security!
 
         } else if ($filearea === 'response') {
             $submissionid = (int)array_shift($args);
@@ -613,7 +613,7 @@ class assignment_onlineaudio extends assignment_base {
             if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
                 return false;
             }
-            send_stored_file($file, 0, 0, true);
+            send_stored_file($file, 0, 0, true, $options);
         }
 
         return false;
